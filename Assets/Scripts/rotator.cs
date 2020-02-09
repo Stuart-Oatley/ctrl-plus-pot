@@ -11,14 +11,19 @@ public class rotator : MonoBehaviour
     bool rotate = false;
 
     private Vector3 rotation;
-
+    private Rigidbody rigidbody;
     private void Start() {
         rotation = new Vector3(0, yRotation, 0);
+        rigidbody = GetComponent<Rigidbody>();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
+    //private void FixedUpdate() {
+    //    if (rotate) {
+    //        rigidbody.AddTorque(rotation, ForceMode.Force);
+    //    }
+    //}
+
+    void Update() {
         if (rotate) {
             transform.Rotate(rotation * Time.deltaTime);
         }

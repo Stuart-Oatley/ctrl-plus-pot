@@ -1,8 +1,8 @@
 ﻿
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using Unity.Jobs;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Collections;
 
 [RequireComponent(typeof(MeshFilter))]
 public class ClayMesh : MonoBehaviour
@@ -11,7 +11,7 @@ public class ClayMesh : MonoBehaviour
     private Mesh changedMesh;
 
     private MeshFilter meshFilter;
-
+    private MeshCollider meshCollider;
     private int targetIndex;
     private Vector3 targetVertex;
 
@@ -22,14 +22,24 @@ public class ClayMesh : MonoBehaviour
     private float radiusOfEffect = 3f;
 
     [SerializeField]
-    private float power = 50f;
+    private float movePower = 50f;
+
+    private bool movingVerts = false;
+    private bool jobActive = false;
+
+    private JobHandle vertsJob;
+    private MoveVertsJob moveVerts;
+    NativeArray<Vector3> vertArray;
+    NativeArray<Vector3> normalsArray;
 
     private void Start() {
         InitMesh();
+        normalsArray = VectorArrayToNativeArray(originalMesh.normals, Allocator.Persistent);
     }
 
     private void InitMesh() {
         meshFilter = GetComponent<MeshFilter>();
+        meshCollider = GetComponent<MeshCollider>();
         originalMesh = meshFilter.mesh;
         changedMesh = originalMesh;
         originalVertices = originalMesh.vertices;
@@ -41,138 +51,83 @@ public class ClayMesh : MonoBehaviour
     }
 
     private void Update() {
-        //if(InputManager.LastPos != null && InputManager.NewPos != null) {
-        //    Vector3 lastPos = (Vector3)InputManager.LastPos;
-        //    Vector3 newPos = (Vector3)InputManager.NewPos;
-        //    if (lastPos == newPos) {
-        //        return;
-        //    }
-            
-        //    Vector3 direction = lastPos - newPos;
-        //    targetIndex = GetTargetVertexIndex(newPos);
-        //    DisplaceVertices(lastPos, direction);
-        //    RemakeCollider();
-        //}
-    }
-
-    private void RemakeCollider() {
-        GetComponent<MeshCollider>().sharedMesh = originalMesh;
-    }
-
-    private int GetTargetVertexIndex(Vector3 newPos) {
-        float smallestDistance = float.MaxValue;
-        int closestVertex = 0;
-        for (int i = 0; i < modifiedVertices.Length; i++) {
-            if (Vector3.Distance(newPos, modifiedVertices[i]) < smallestDistance) {
-                closestVertex = i;
+        if (movingVerts) {
+            if (jobActive) {
+                FinishJob();
             }
+            originalMesh.vertices = modifiedVertices;
+            originalMesh.RecalculateNormals();
+            normalsArray.Dispose();
+            normalsArray = VectorArrayToNativeArray(originalMesh.normals, Allocator.Persistent);
+            meshCollider.sharedMesh = originalMesh;
+            movingVerts = false;
         }
-        return closestVertex;
     }
 
-    private void DisplaceVertices(Vector3 pos, Vector3 direction) {
-        float sqrRadius = radiusOfEffect * radiusOfEffect;
-        float force = direction.magnitude;
-        Vector3 currentVertexPos = Vector3.zero;
-        Vector3 targetVertexPos = meshFilter.transform.InverseTransformPoint(pos);
-        for (int i = 0; i < modifiedVertices.Length; i++) {
-            currentVertexPos = modifiedVertices[i];
-            float sqrMag = (currentVertexPos - targetVertexPos).sqrMagnitude;
-            if (sqrMag > sqrRadius) {
-                continue;
-            }
-            if (!Pushing(i, direction)) {
-                continue;
-            }
-            float distance = Mathf.Sqrt(sqrMag);
-            float falloff = GaussFalloff(distance, radiusOfEffect);
-            modifiedVertices[i] = currentVertexPos + (direction * falloff * power);
+    private void DisplaceVertices(Vector3 pos, Vector3 directionToMove) {
+
+        if (jobActive) {
+            FinishJob();
         }
-
-        originalMesh.vertices = modifiedVertices;
-        originalMesh.RecalculateNormals();
-
-    }
-
-    private bool Pushing(int i, Vector3 direction) {
-        Vector3 normalisedDirection = direction / direction.magnitude;
-        if(Vector3.Dot(normalisedDirection, originalMesh.normals[i]) <= 0) {
-            return true;
-        }
-        return false;
-    }
-
-    private static float GaussFalloff(float dist, float inRadius) {
-        return Mathf.Clamp01(Mathf.Pow(360, -Mathf.Pow(dist / inRadius, 2.5f) - 0.01f));
+        pos = meshFilter.transform.InverseTransformPoint(pos);
+        vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
+        moveVerts = new MoveVertsJob {
+            modifiedVerts = vertArray,
+            normals = normalsArray,
+            direction = directionToMove,
+            targetVertexPos = pos,
+            radius = radiusOfEffect,
+            power = movePower
+        };
+        vertsJob = moveVerts.Schedule(vertArray.Length, vertArray.Length / 5);
+        jobActive = true;
     }
 
     private void OnCollisionEnter(Collision collision) {
+        Debug.Log(collision.relativeVelocity);
+        if (collision.relativeVelocity == Vector3.zero) {
+            return;
+        }
 
-        int vertexCount = modifiedVertices.Length;
-        ContactPoint[] contacts = collision.contacts;
+        ContactPoint[] contacts = new ContactPoint[collision.contactCount];
+        collision.GetContacts(contacts);
+        movingVerts = true;
         for(int i = 0; i < contacts.Length; i++) {
             DisplaceVertices(contacts[i].point, collision.relativeVelocity);
         }
-        originalMesh.vertices = modifiedVertices;
-        originalMesh.RecalculateNormals();
-        RemakeCollider();
-
-
-        //List<int> toMove = new List<int>();
-        //Dictionary<int, float> closeToMovingVert = new Dictionary<int, float>();
-        //Vector3 direction = collision.relativeVelocity;
-        //Vector3 normalDirection = direction / direction.magnitude; // Unity's built in normalise functions return a vector3.zero if the vector is below a certain size, so we'll do it ourselves
-        //for (int i = 0; i < modifiedVertices.Length; i++) {
-        //    if(collision.collider.bounds.Contains(modifiedVertices[i])) {
-        //        //if(Vector3.Dot(normalDirection, originalMesh.normals[i]) >= 0) {
-        //            toMove.Add(i);
-        //            FindClose(modifiedVertices[i], closeToMovingVert);
-        //        //}
-        //    }
-        //}
-        //List<int> toRemove = closeToMovingVert.Keys.Except(toMove).ToList();
-        //for(int i = 0; i < toRemove.Count; i++) {
-        //    closeToMovingVert.Remove(toRemove[i]);
-        //}
-        //MoveVerts(toMove, direction);
-        //MoveCloseVerts(closeToMovingVert, direction);
-        //originalMesh.vertices = modifiedVertices;
-        //originalMesh.RecalculateNormals();
-        //RemakeCollider();
-
     }
 
-    private void MoveCloseVerts(Dictionary<int, float> closeToMovingVert, Vector3 direction) {
-        Vector3 movement = Vector3.zero;
-        float distance = .0f;
-        float falloff = .0f;
-        foreach (KeyValuePair<int, float> pair in closeToMovingVert) {
-            distance = Mathf.Sqrt(pair.Value);
-            falloff = GaussFalloff(distance, radiusOfEffect);
-            modifiedVertices[pair.Key] += direction * falloff * power;
-        }
+    private void FinishJob() {
+        vertsJob.Complete();
+        modifiedVertices = NativeArrayToVectorArray(moveVerts.modifiedVerts);
+        vertArray.Dispose();
+        jobActive = false;
     }
 
-    private void MoveVerts(List<int> toMove, Vector3 direction) {
-        foreach(int i in toMove) {
-            modifiedVertices[i] += direction;
+    private unsafe NativeArray<Vector3> VectorArrayToNativeArray(Vector3[] vectorArray, Allocator allocator) {
+        NativeArray<Vector3> nativeVectors = new NativeArray<Vector3>(vectorArray.Length, allocator);
+
+        fixed (void* vectorPointer = vectorArray) { // Fix the vector array in place so Unity doesn't move it and get a pointer to it
+            UnsafeUtility.MemCpy(NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(nativeVectors), vectorPointer,
+                vectorArray.Length * (long)UnsafeUtility.SizeOf<Vector3>());
         }
+
+        return nativeVectors;
     }
 
-    private void FindClose(Vector3 position, Dictionary<int, float> closeToMovingVert) {
-        float sqRadius = radiusOfEffect * radiusOfEffect;
-        for(int i = 0; i < modifiedVertices.Length; i++) {
-            float sqMag = (modifiedVertices[i] - position).sqrMagnitude;
-            if(sqMag <= sqRadius) {
-                if (closeToMovingVert.ContainsKey(i)) {
-                    if(closeToMovingVert[i] < sqMag) {
-                        closeToMovingVert[i] = sqMag;
-                    }
-                    continue;
-                }
-                closeToMovingVert.Add(i, sqMag);
-            }
+    private unsafe Vector3[] NativeArrayToVectorArray(NativeArray<Vector3> nativeVectors) {
+        Vector3[] vectorArray = new Vector3[nativeVectors.Length];
+
+        fixed (void* vectorPointer = vectorArray) { // Fix the vector array in place so Unity doesn't move it and get a pointer to it
+            UnsafeUtility.MemCpy(vectorPointer, NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(nativeVectors),
+                vectorArray.Length * (long)UnsafeUtility.SizeOf<Vector3>());
         }
+
+        return vectorArray;
+    }
+
+    private void OnApplicationQuit() {
+        normalsArray.Dispose();
     }
 }
 
