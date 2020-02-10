@@ -34,7 +34,6 @@ public class ClayMesh : MonoBehaviour
 
     private void Start() {
         InitMesh();
-        normalsArray = VectorArrayToNativeArray(originalMesh.normals, Allocator.Persistent);
     }
 
     private void InitMesh() {
@@ -56,9 +55,8 @@ public class ClayMesh : MonoBehaviour
                 FinishJob();
             }
             originalMesh.vertices = modifiedVertices;
+            originalMesh.RecalculateBounds();
             originalMesh.RecalculateNormals();
-            normalsArray.Dispose();
-            normalsArray = VectorArrayToNativeArray(originalMesh.normals, Allocator.Persistent);
             meshCollider.sharedMesh = originalMesh;
             movingVerts = false;
         }
@@ -69,13 +67,14 @@ public class ClayMesh : MonoBehaviour
         if (jobActive) {
             FinishJob();
         }
-        pos = meshFilter.transform.InverseTransformPoint(pos);
+        Vector3 meshPos = meshFilter.transform.InverseTransformPoint(pos);
         vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
+        normalsArray = VectorArrayToNativeArray(originalMesh.normals, Allocator.TempJob);
         moveVerts = new MoveVertsJob {
             modifiedVerts = vertArray,
             normals = normalsArray,
             direction = directionToMove,
-            targetVertexPos = pos,
+            targetVertexPos = meshPos,
             radius = radiusOfEffect,
             power = movePower
         };
@@ -84,30 +83,38 @@ public class ClayMesh : MonoBehaviour
     }
 
     private void OnCollisionEnter(Collision collision) {
-        Debug.Log(collision.relativeVelocity);
         if (collision.relativeVelocity == Vector3.zero) {
             return;
         }
 
-        ContactPoint[] contacts = new ContactPoint[collision.contactCount];
-        collision.GetContacts(contacts);
         movingVerts = true;
-        for(int i = 0; i < contacts.Length; i++) {
-            DisplaceVertices(contacts[i].point, collision.relativeVelocity);
+        for(int i = 0; i < collision.contacts.Length; i++) {
+            DisplaceVertices(collision.contacts[i].point, collision.relativeVelocity);
         }
     }
 
     private void FinishJob() {
         vertsJob.Complete();
-        modifiedVertices = NativeArrayToVectorArray(moveVerts.modifiedVerts);
+        NativeArrayToVectorArray(moveVerts.modifiedVerts, modifiedVertices);
         vertArray.Dispose();
+        normalsArray.Dispose();
         jobActive = false;
     }
 
+    //native arrays constructor that takes an array and it's toArray functions are both costly and create garbage so the following functions
+    //use pointers and memcopy to remove both issues
+
+    /// <summary>
+    /// Creates a new NativeArray and copies the memory from the Vector3 array to it. As NativeArray's dispose method handles deallocating memory
+    /// without creating garbage we don't have to worry about allocating the nativearray creating garbage 
+    /// </summary>
+    /// <param name="vectorArray"></param>
+    /// <param name="allocator"></param>
+    /// <returns></returns>
     private unsafe NativeArray<Vector3> VectorArrayToNativeArray(Vector3[] vectorArray, Allocator allocator) {
         NativeArray<Vector3> nativeVectors = new NativeArray<Vector3>(vectorArray.Length, allocator);
 
-        fixed (void* vectorPointer = vectorArray) { // Fix the vector array in place so Unity doesn't move it and get a pointer to it
+        fixed (void* vectorPointer = vectorArray) { // Fix the vector array in place whilst we copy so Unity doesn't move it and get a pointer to it
             UnsafeUtility.MemCpy(NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(nativeVectors), vectorPointer,
                 vectorArray.Length * (long)UnsafeUtility.SizeOf<Vector3>());
         }
@@ -115,19 +122,42 @@ public class ClayMesh : MonoBehaviour
         return nativeVectors;
     }
 
-    private unsafe Vector3[] NativeArrayToVectorArray(NativeArray<Vector3> nativeVectors) {
-        Vector3[] vectorArray = new Vector3[nativeVectors.Length];
+    /// <summary>
+    /// copies the memory from the NativeArray to the Vector3 Array. They must be the same size for the copy to happen. Passing in the premade array avoids 
+    /// allocating the vector3 array which would create a lot of garbage
+    /// </summary>
+    /// <param name="nativeVectors">Native array to copy</param>
+    /// <param name="vectorArray">Array to populate.</param>
+    /// <returns></returns>
+    private unsafe void NativeArrayToVectorArray(NativeArray<Vector3> nativeVectors, Vector3[] vectorArray) {
+        if(nativeVectors.Length != vectorArray.Length) {
+            return;
+        }
 
-        fixed (void* vectorPointer = vectorArray) { // Fix the vector array in place so Unity doesn't move it and get a pointer to it
+        fixed (void* vectorPointer = vectorArray) { // Fix the vector array in place whilst we copy so Unity doesn't move it and get a pointer to it
             UnsafeUtility.MemCpy(vectorPointer, NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(nativeVectors),
                 vectorArray.Length * (long)UnsafeUtility.SizeOf<Vector3>());
         }
 
-        return vectorArray;
     }
 
-    private void OnApplicationQuit() {
-        normalsArray.Dispose();
+    /// <summary>
+    /// Copies the memory from one Vector3 array to another to avoid having to allocate and create garbage.
+    /// Arrays must be the same size for copy to take place
+    /// </summary>
+    /// <param name="copyFrom">Array to copy from</param>
+    /// <param name="copyTo">Array to copy to</param>
+    private unsafe void CopyVectorArray(Vector3[] copyFrom, Vector3[] copyTo) {
+        if(copyFrom.Length != copyTo.Length) {
+            return;
+        }
+
+        fixed(void* sourcePointer = copyFrom) { //Fix copyFrom in place
+            fixed(void* targetPointer = copyTo) { //Fix copyTo in place
+                UnsafeUtility.MemCpy(targetPointer, sourcePointer, copyFrom.Length * (long)UnsafeUtility.SizeOf<Vector3>());
+            }
+        }
     }
+
 }
 
