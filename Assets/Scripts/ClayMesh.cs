@@ -83,13 +83,23 @@ public class ClayMesh : MonoBehaviour
     }
 
     private void OnCollisionEnter(Collision collision) {
-        if (collision.relativeVelocity == Vector3.zero) {
+		if(collision.gameObject.tag == "Wheel")
+		{
+			return;
+		}
+		Rotator rotator = GetComponentInParent<Rotator>();
+		Vector3 velocity = collision.relativeVelocity;
+		if(rotator && rotator.Rotating)
+		{
+			velocity += rotator.Rotation;
+		}
+        if (velocity == Vector3.zero) {
             return;
         }
 
         movingVerts = true;
         for(int i = 0; i < collision.contacts.Length; i++) {
-            DisplaceVertices(collision.contacts[i].point, collision.relativeVelocity);
+            DisplaceVertices(collision.contacts[i].point, velocity);
         }
     }
 

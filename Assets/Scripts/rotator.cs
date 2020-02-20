@@ -2,30 +2,41 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class rotator : MonoBehaviour
+public class Rotator : MonoBehaviour
 {
-    [SerializeField]
-    private float yRotation;
 
-    [SerializeField]
-    bool rotate = false;
+	[SerializeField]
+	private float yRotation;
 
-    private Vector3 rotation;
-    private Rigidbody rigidbody;
-    private void Start() {
-        rotation = new Vector3(0, yRotation, 0);
-        rigidbody = GetComponent<Rigidbody>();
-    }
+	[SerializeField]
+	private bool rotating = false;
+	public bool Rotating {
+		get { return rotating; }
+	}
 
-    //private void FixedUpdate() {
-    //    if (rotate) {
-    //        rigidbody.AddTorque(rotation, ForceMode.Force);
-    //    }
-    //}
+	private Vector3 rotation;
+	public Vector3 Rotation {
+		get { return rotation * Time.deltaTime; }
+	}
+	private Rigidbody rigidbody;
+	private void Start()
+	{
+		rotation = new Vector3(0, yRotation, 0);
+		rigidbody = GetComponent<Rigidbody>();
+	}
 
-    void Update() {
-        if (rotate) {
-            transform.Rotate(rotation * Time.deltaTime);
-        }
-    }
+	//private void FixedUpdate() {
+	//    if (rotate) {
+	//        rigidbody.AddTorque(rotation, ForceMode.Force);
+	//    }
+	//}
+
+	void Update()
+	{
+		if (rotating)
+		{
+			transform.Rotate(rotation * Time.deltaTime);
+		}
+	}
 }
+
