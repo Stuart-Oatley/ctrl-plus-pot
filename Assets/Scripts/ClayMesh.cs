@@ -27,6 +27,9 @@ public class ClayMesh : MonoBehaviour
     private bool movingVerts = false;
     private bool jobActive = false;
 
+    [SerializeField]
+    private float maxVertMovement = 0.5f;
+
     private JobHandle vertsJob;
     private MoveVertsJob moveVerts;
     NativeArray<Vector3> vertArray;
@@ -39,6 +42,7 @@ public class ClayMesh : MonoBehaviour
     private void InitMesh() {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
+        meshCollider.cookingOptions = MeshColliderCookingOptions.EnableMeshCleaning;
         originalMesh = meshFilter.mesh;
         changedMesh = originalMesh;
         originalVertices = originalMesh.vertices;
@@ -55,8 +59,8 @@ public class ClayMesh : MonoBehaviour
                 FinishJob();
             }
             originalMesh.vertices = modifiedVertices;
-            originalMesh.RecalculateBounds();
             originalMesh.RecalculateNormals();
+            originalMesh.RecalculateBounds();
             meshCollider.sharedMesh = originalMesh;
             movingVerts = false;
         }
@@ -76,7 +80,8 @@ public class ClayMesh : MonoBehaviour
             direction = directionToMove,
             targetVertexPos = meshPos,
             radius = radiusOfEffect,
-            power = movePower
+            power = movePower,
+            maxMovement = maxVertMovement
         };
         vertsJob = moveVerts.Schedule(vertArray.Length, vertArray.Length / 5);
         jobActive = true;

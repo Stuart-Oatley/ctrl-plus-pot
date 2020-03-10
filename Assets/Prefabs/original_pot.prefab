@@ -104,7 +104,7 @@ Rigidbody:
   serializedVersion: 2
   m_Mass: 1
   m_Drag: 0
-  m_AngularDrag: 0.05
+  m_AngularDrag: 0
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
@@ -123,7 +123,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   radiusOfEffect: 0.1
-  power: 0.2
+  movePower: 50
+  maxVertMovement: 0.5
 --- !u!1 &5472045475542913652
 GameObject:
   m_ObjectHideFlags: 0
@@ -170,7 +171,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   yRotation: 10
-  rotate: 0
+  rotating: 0
 --- !u!1 &7562033658726358651
 GameObject:
   m_ObjectHideFlags: 0
