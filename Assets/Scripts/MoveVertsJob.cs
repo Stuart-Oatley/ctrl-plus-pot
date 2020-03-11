@@ -11,7 +11,6 @@ struct MoveVertsJob : IJobParallelFor {
     public Vector3 targetVertexPos;
     public float radius;
     public float power;
-    public float maxMovement;
 
     public void Execute(int index) {
         float sqrMag = (modifiedVerts[index] - targetVertexPos).sqrMagnitude;
@@ -23,10 +22,6 @@ struct MoveVertsJob : IJobParallelFor {
         }
         float distance = Mathf.Sqrt(sqrMag);
         float falloff = GaussFalloff(distance, radius);
-        Vector3 movement = direction * falloff * power;
-        if(movement.sqrMagnitude > maxMovement * maxMovement) {
-            Vector3.ClampMagnitude(movement, maxMovement);
-        }
         modifiedVerts[index] = modifiedVerts[index] + direction * falloff * power;
     }
 

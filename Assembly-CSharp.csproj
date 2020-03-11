@@ -307,6 +307,7 @@
     <Compile Include="Assets\LeapMotion\Modules\InteractionEngine\Scripts\Utility\KabschSolver.cs" />
     <Compile Include="Assets\LeapMotion\Modules\InteractionEngine\Scripts\Utility\PhysicsCallbacks.cs" />
     <Compile Include="Assets\Scripts\ClayMesh.cs" />
+    <Compile Include="Assets\Scripts\LimitMovement.cs" />
     <Compile Include="Assets\Scripts\MoveVertsJob.cs" />
     <Compile Include="Assets\Scripts\Rotator.cs" />
     <None Include="Assets\TesselationShader.shader" />

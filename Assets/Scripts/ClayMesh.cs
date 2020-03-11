@@ -3,6 +3,7 @@ using UnityEngine;
 using Unity.Jobs;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
+using System;
 
 [RequireComponent(typeof(MeshFilter))]
 public class ClayMesh : MonoBehaviour
@@ -25,7 +26,7 @@ public class ClayMesh : MonoBehaviour
     private float movePower = 50f;
 
     private bool movingVerts = false;
-    private bool jobActive = false;
+    private bool moveJobActive = false;
 
     [SerializeField]
     private float maxVertMovement = 0.5f;
@@ -34,6 +35,9 @@ public class ClayMesh : MonoBehaviour
     private MoveVertsJob moveVerts;
     NativeArray<Vector3> vertArray;
     NativeArray<Vector3> normalsArray;
+    NativeArray<Vector3> lastVertPositions;
+    private JobHandle limitMoveJob;
+    private LimitMovement limitMove;
 
     private void Start() {
         InitMesh();
@@ -42,7 +46,6 @@ public class ClayMesh : MonoBehaviour
     private void InitMesh() {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
-        meshCollider.cookingOptions = MeshColliderCookingOptions.EnableMeshCleaning;
         originalMesh = meshFilter.mesh;
         changedMesh = originalMesh;
         originalVertices = originalMesh.vertices;
@@ -55,9 +58,23 @@ public class ClayMesh : MonoBehaviour
 
     private void Update() {
         if (movingVerts) {
-            if (jobActive) {
-                FinishJob();
+            if (moveJobActive) {
+                FinishMoveJob();
             }
+            vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
+            lastVertPositions = VectorArrayToNativeArray(originalMesh.vertices, Allocator.TempJob);
+            limitMove = new LimitMovement {
+                oldPositions = lastVertPositions,
+                newPositions = vertArray,
+                maxMovement = maxVertMovement
+            };
+            limitMoveJob = limitMove.Schedule(modifiedVertices.Length, modifiedVertices.Length / 5);
+        }
+    }
+
+    private void LateUpdate() {
+        if (movingVerts) {
+            FinishLimitJob();
             originalMesh.vertices = modifiedVertices;
             originalMesh.RecalculateNormals();
             originalMesh.RecalculateBounds();
@@ -68,8 +85,8 @@ public class ClayMesh : MonoBehaviour
 
     private void DisplaceVertices(Vector3 pos, Vector3 directionToMove) {
 
-        if (jobActive) {
-            FinishJob();
+        if (moveJobActive) {
+            FinishMoveJob();
         }
         Vector3 meshPos = meshFilter.transform.InverseTransformPoint(pos);
         vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
@@ -80,11 +97,10 @@ public class ClayMesh : MonoBehaviour
             direction = directionToMove,
             targetVertexPos = meshPos,
             radius = radiusOfEffect,
-            power = movePower,
-            maxMovement = maxVertMovement
+            power = movePower
         };
         vertsJob = moveVerts.Schedule(vertArray.Length, vertArray.Length / 5);
-        jobActive = true;
+        moveJobActive = true;
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -108,12 +124,19 @@ public class ClayMesh : MonoBehaviour
         }
     }
 
-    private void FinishJob() {
+    private void FinishMoveJob() {
         vertsJob.Complete();
         NativeArrayToVectorArray(moveVerts.modifiedVerts, modifiedVertices);
         vertArray.Dispose();
         normalsArray.Dispose();
-        jobActive = false;
+        moveJobActive = false;
+    }
+
+    private void FinishLimitJob() {
+        limitMoveJob.Complete();
+        NativeArrayToVectorArray(limitMove.newPositions, modifiedVertices);
+        vertArray.Dispose();
+        lastVertPositions.Dispose();
     }
 
     //native arrays constructor that takes an array and it's toArray functions are both costly and create garbage so the following functions
