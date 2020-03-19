@@ -109,11 +109,18 @@ public class ClayMesh : MonoBehaviour
 			return;
 		}
 		Rotator rotator = GetComponentInParent<Rotator>();
-		Vector3 velocity = collision.relativeVelocity;
-		if(rotator && rotator.Rotating)
-		{
-			velocity += rotator.Rotation;
-		}
+		Vector3 velocity = collision.collider.GetComponent<Rigidbody>().velocity;
+        velocity = Vector3.Normalize(velocity);
+  
+        if (Vector3.Dot(Vector3.Normalize(velocity), Vector3.forward) <= -0)
+        {
+            return ;
+        }
+
+        if (rotator && rotator.Rotating)
+        {
+            velocity += Vector3.right * movePower * rotator.Rotation.magnitude;
+        }
         if (velocity == Vector3.zero) {
             return;
         }
@@ -124,6 +131,36 @@ public class ClayMesh : MonoBehaviour
         }
     }
 
+    private void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.tag == "Wheel")
+        {
+            return;
+        }
+        Rotator rotator = GetComponentInParent<Rotator>();
+        Vector3 velocity = collision.collider.GetComponent<Rigidbody>().velocity;
+        velocity = Vector3.Normalize(velocity);
+
+        if (Vector3.Dot(Vector3.Normalize(velocity), Vector3.forward) <= -0)
+        {
+            return;
+        }
+
+        if (rotator && rotator.Rotating)
+        {
+            velocity += Vector3.right * movePower;
+        }
+        if (velocity == Vector3.zero)
+        {
+            return;
+        }
+
+        movingVerts = true;
+        for (int i = 0; i < collision.contacts.Length; i++)
+        {
+            DisplaceVertices(collision.contacts[i].point, velocity);
+        }
+    }
     private void FinishMoveJob() {
         vertsJob.Complete();
         NativeArrayToVectorArray(moveVerts.modifiedVerts, modifiedVertices);

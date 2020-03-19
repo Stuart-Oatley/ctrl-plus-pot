@@ -27,7 +27,7 @@ struct MoveVertsJob : IJobParallelFor {
 
     private bool Pushing(int i, Vector3 direction) {
         Vector3 normalisedDirection = direction / direction.magnitude;
-        if (Vector3.Dot(normalisedDirection, normals[i]) <= 0.1) {
+        if (Vector3.Dot(normalisedDirection, normals[i]) <= -0.1) {
             return true;
         }
         return false;
