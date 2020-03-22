@@ -85,8 +85,8 @@ public class Painter : MonoBehaviour
         if (Physics.Raycast(ray, out hit, rayLength))
 		{
 			Vector2 pixelUV = new Vector2(hit.textureCoord.x, hit.textureCoord.y);
-			uvWorldPos.x = pixelUV.x *= canvasTex.width - canvasCam.orthographicSize;//To center the UV on X
-			uvWorldPos.y = pixelUV.y *= canvasTex.height - canvasCam.orthographicSize;//To center the UV on Y
+			uvWorldPos.x = pixelUV.x - canvasCam.orthographicSize;//To center the UV on X
+			uvWorldPos.y = pixelUV.y - canvasCam.orthographicSize;//To center the UV on Y
 			uvWorldPos.z = 0.0f;
 
 			Debug.Log(uvWorldPos);
