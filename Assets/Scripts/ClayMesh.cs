@@ -4,13 +4,18 @@ using Unity.Jobs;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
 using System;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(MeshFilter))]
 public class ClayMesh : MonoBehaviour
 {
     private Mesh originalMesh;
     private Mesh changedMesh;
+    private MeshRenderer mRenderer;
+    [SerializeField]
+    private Transform centre;
 
+    private Vector3 middle;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     private int targetIndex;
@@ -31,6 +36,8 @@ public class ClayMesh : MonoBehaviour
     [SerializeField]
     private float maxVertMovement = 0.5f;
 
+    private Dictionary<int, List<int>> connectedNormals;
+
     private JobHandle vertsJob;
     private MoveVertsJob moveVerts;
     NativeArray<Vector3> vertArray;
@@ -41,6 +48,8 @@ public class ClayMesh : MonoBehaviour
 
     private void Start() {
         InitMesh();
+        middle = meshFilter.transform.InverseTransformPoint(centre.position);
+        mRenderer = GetComponent<MeshRenderer>();
     }
 
     private void InitMesh() {
@@ -53,7 +62,8 @@ public class ClayMesh : MonoBehaviour
         for(int i = 0; i < originalVertices.Length; i++) {
             modifiedVertices[i] = originalVertices[i];
         }
-
+        Debug.Log("verts - " + modifiedVertices.Length);
+        Debug.Log("normals - " + originalMesh.normals.Length);
     }
 
     private void Update() {
@@ -81,6 +91,12 @@ public class ClayMesh : MonoBehaviour
             meshCollider.sharedMesh = originalMesh;
             movingVerts = false;
         }
+        if (Input.GetKeyDown("n")) {
+            Debug.Log("***************************************");
+            for(int i = 0; i < originalMesh.normals.Length; i++) {
+                Debug.Log(originalMesh.normals[i]);
+            }
+        }
     }
 
     private void DisplaceVertices(Vector3 pos, Vector3 directionToMove) {
@@ -97,7 +113,9 @@ public class ClayMesh : MonoBehaviour
             direction = directionToMove,
             targetVertexPos = meshPos,
             radius = radiusOfEffect,
-            power = movePower
+            power = movePower,
+            centrePoint = middle,
+
         };
         vertsJob = moveVerts.Schedule(vertArray.Length, vertArray.Length / 5);
         moveJobActive = true;
@@ -108,59 +126,26 @@ public class ClayMesh : MonoBehaviour
 		{
 			return;
 		}
-		Rotator rotator = GetComponentInParent<Rotator>();
+		rotator Rotator = GetComponentInParent<rotator>();
 		Vector3 velocity = collision.collider.GetComponent<Rigidbody>().velocity;
         velocity = Vector3.Normalize(velocity);
-  
-        if (Vector3.Dot(Vector3.Normalize(velocity), Vector3.forward) <= -0)
-        {
-            return ;
-        }
 
-        if (rotator && rotator.Rotating)
-        {
-            velocity += Vector3.right * movePower * rotator.Rotation.magnitude;
+        if (Rotator && Rotator.Rotating) {
+            velocity += Vector3.right * movePower * Rotator.Rotation.magnitude;
         }
         if (velocity == Vector3.zero) {
             return;
         }
-
+        Debug.Log(velocity);
         movingVerts = true;
-        for(int i = 0; i < collision.contacts.Length; i++) {
-            DisplaceVertices(collision.contacts[i].point, velocity);
-        }
-    }
-
-    private void OnCollisionStay(Collision collision)
-    {
-        if (collision.gameObject.tag == "Wheel")
-        {
-            return;
-        }
-        Rotator rotator = GetComponentInParent<Rotator>();
-        Vector3 velocity = collision.collider.GetComponent<Rigidbody>().velocity;
         velocity = Vector3.Normalize(velocity);
+        for(int i = 0; i < collision.contacts.Length; i++) {
 
-        if (Vector3.Dot(Vector3.Normalize(velocity), Vector3.forward) <= -0)
-        {
-            return;
-        }
-
-        if (rotator && rotator.Rotating)
-        {
-            velocity += Vector3.right * movePower;
-        }
-        if (velocity == Vector3.zero)
-        {
-            return;
-        }
-
-        movingVerts = true;
-        for (int i = 0; i < collision.contacts.Length; i++)
-        {
             DisplaceVertices(collision.contacts[i].point, velocity);
         }
     }
+
+
     private void FinishMoveJob() {
         vertsJob.Complete();
         NativeArrayToVectorArray(moveVerts.modifiedVerts, modifiedVertices);
@@ -174,6 +159,7 @@ public class ClayMesh : MonoBehaviour
         NativeArrayToVectorArray(limitMove.newPositions, modifiedVertices);
         vertArray.Dispose();
         lastVertPositions.Dispose();
+
     }
 
     //native arrays constructor that takes an array and it's toArray functions are both costly and create garbage so the following functions
