@@ -91,12 +91,6 @@ public class ClayMesh : MonoBehaviour
             meshCollider.sharedMesh = originalMesh;
             movingVerts = false;
         }
-        if (Input.GetKeyDown("n")) {
-            Debug.Log("***************************************");
-            for(int i = 0; i < originalMesh.normals.Length; i++) {
-                Debug.Log(originalMesh.normals[i]);
-            }
-        }
     }
 
     private void DisplaceVertices(Vector3 pos, Vector3 directionToMove) {
@@ -105,6 +99,7 @@ public class ClayMesh : MonoBehaviour
             FinishMoveJob();
         }
         Vector3 meshPos = meshFilter.transform.InverseTransformPoint(pos);
+        directionToMove = meshFilter.transform.InverseTransformDirection(directionToMove);
         vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
         normalsArray = VectorArrayToNativeArray(originalMesh.normals, Allocator.TempJob);
         moveVerts = new MoveVertsJob {
@@ -128,21 +123,45 @@ public class ClayMesh : MonoBehaviour
 		}
 		rotator Rotator = GetComponentInParent<rotator>();
 		Vector3 velocity = collision.collider.GetComponent<Rigidbody>().velocity;
-        velocity = Vector3.Normalize(velocity);
-
+        velocity = meshFilter.transform.TransformDirection(velocity);
         if (Rotator && Rotator.Rotating) {
-            velocity += Vector3.right * movePower * Rotator.Rotation.magnitude;
+            velocity += Vector3.back * movePower * Rotator.Rotation.magnitude;
         }
         if (velocity == Vector3.zero) {
             return;
         }
-        Debug.Log(velocity);
+
         movingVerts = true;
         velocity = Vector3.Normalize(velocity);
         for(int i = 0; i < collision.contacts.Length; i++) {
-
+            if (!IsPushing(collision.contacts[i].point, velocity)) {
+                continue;
+            }
             DisplaceVertices(collision.contacts[i].point, velocity);
         }
+    }
+
+    private bool IsPushing(Vector3 pos, Vector3 dir) {
+        Vector3 localPos = meshFilter.transform.TransformPoint(pos);
+        Vector3 nearestNorm = originalMesh.normals[FindNearestVert(localPos)];
+        if (Vector3.Dot(dir, nearestNorm) <= 0.1) {
+            return true;
+        }
+        return false;
+    }
+
+    private int FindNearestVert(Vector3 position) {
+       
+        int index = 0;
+        float smallestDistance = float.MaxValue;
+        for(int i = 0; i < modifiedVertices.Length; i++) {
+            float distance = Vector3.Distance(position, modifiedVertices[i]);
+            if ( distance < smallestDistance) {
+                index = i;
+                smallestDistance = distance;
+            }
+        }
+        return index;
     }
 
 

@@ -25,9 +25,9 @@ struct MoveVertsJob : IJobParallelFor {
         //if (!Pushing(index, direction * falloff * power)) {
         //    return;
         //}
-        if (Vector3.Distance(modifiedVerts[index], centrePoint) < Vector3.Distance(targetPos, centrePoint)) {
-            return;
-        }
+        //if (Vector3.Distance(modifiedVerts[index], centrePoint) < Vector3.Distance(targetPos, centrePoint)) {
+        //    return;
+        //}
         modifiedVerts[index] = modifiedVerts[index] + direction * falloff * power;
     }
 
