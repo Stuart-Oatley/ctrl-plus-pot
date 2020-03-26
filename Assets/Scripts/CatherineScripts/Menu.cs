@@ -10,14 +10,6 @@ public class Menu : MonoBehaviour
     [SerializeField]
     Animator camAnimator;
 
-    private void Start()
-    {
-        if(gameObject.name == "Menu")
-        {
-            StartCoroutine(menuWait(3));
-        }
-    }
-
     // Start is called before the first frame update
     private void OnCollisionEnter(Collision collision)
     {
@@ -49,11 +41,5 @@ public class Menu : MonoBehaviour
                 break;
         }
 
-    }
-
-    IEnumerator menuWait(float time)
-    {
-        yield return new WaitForSeconds(time);
-        menuButtons.SetActive(true);
     }
 }
