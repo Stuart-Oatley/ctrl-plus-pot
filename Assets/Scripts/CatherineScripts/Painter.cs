@@ -23,7 +23,7 @@ public class Painter : MonoBehaviour
 
 	private bool saving = false; // bool to store if the texture is being saved
 
-    private ContactPoint contact;
+    private ContactPoint contact; // stores the contact point of collision
 
 	private void Start()
 	{
@@ -79,6 +79,7 @@ public class Painter : MonoBehaviour
 	private bool UVHitPos(ref Vector3 uvWorldPos)
 	{
 		RaycastHit hit;
+        // create a ray from collision point 
 		Ray ray = new Ray(contact.point - contact.normal, contact.normal);
 
         if (Physics.Raycast(ray, out hit))
