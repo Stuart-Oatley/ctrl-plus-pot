@@ -25,7 +25,6 @@ public class ClayMesh : MonoBehaviour
     private int targetIndex;
     private Vector3 targetVertex;
 
-    private Vector3[] originalVertices;
     private Vector3[] modifiedVertices;
 
     [SerializeField]
@@ -60,11 +59,9 @@ public class ClayMesh : MonoBehaviour
     }
 
     private void Reset() {
-        newMesh.vertices = originalVerts;
-        newMesh.uv = originalUVs;
-        newMesh.normals = originalNorms;
-        newMesh.triangles = originalTris;
-        Debug.Log("Reset");
+        for (int i = 0; i < originalVerts.Length; i++) {
+            modifiedVertices[i] = originalVerts[i];
+        }
         RefreshMesh();
     }
 
@@ -120,12 +117,12 @@ public class ClayMesh : MonoBehaviour
         }
         if (movingVerts) {
             FinishLimitJob();
-            newMesh.vertices = modifiedVertices;
             RefreshMesh();
         }
     }
 
     private void RefreshMesh() {
+        newMesh.vertices = modifiedVertices;
         newMesh.RecalculateNormals();
         newMesh.RecalculateBounds();
         meshCollider.sharedMesh = newMesh;

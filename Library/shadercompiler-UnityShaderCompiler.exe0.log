@@ -1,2 +1,5 @@
 Base path: C:/Program Files/Unity/Hub/Editor/2019.1.9f1/Editor/Data
 Cmd: initializeCompiler
+Cmd: preprocess
+  error: 1 plat 21 at (16): Unrecognized #pragma surface directive: Lambert
+  insize=1558 outsize=1778 ok=1
