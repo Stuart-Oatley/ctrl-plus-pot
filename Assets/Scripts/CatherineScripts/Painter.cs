@@ -79,10 +79,9 @@ public class Painter : MonoBehaviour
 	private bool UVHitPos(ref Vector3 uvWorldPos)
 	{
 		RaycastHit hit;
-		float rayLength = 1f;
-		Ray ray = new Ray(contact.point + contact.normal * rayLength, -contact.normal);
+		Ray ray = new Ray(contact.point - contact.normal, contact.normal);
 
-        if (Physics.Raycast(ray, out hit, rayLength))
+        if (Physics.Raycast(ray, out hit))
 		{
 			Vector2 pixelUV = new Vector2(hit.textureCoord.x, hit.textureCoord.y);
 			uvWorldPos.x = pixelUV.x - canvasCam.orthographicSize;//To center the UV on X
