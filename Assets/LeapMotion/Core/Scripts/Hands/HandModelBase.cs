@@ -53,7 +53,7 @@ namespace Leap.Unity {
     /// opt-in by a developer making their own hand model script if they want editor persistence.
     /// </summary>
     public virtual bool SupportsEditorPersistence() {
-      return false;
+      return true;
     }
 
     [NonSerialized]

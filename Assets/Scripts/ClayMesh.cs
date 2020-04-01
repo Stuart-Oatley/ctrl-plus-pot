@@ -3,14 +3,18 @@ using UnityEngine;
 using Unity.Jobs;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
-using System;
+using System.Collections;
 using System.Collections.Generic;
+using System;
 
 [RequireComponent(typeof(MeshFilter))]
 public class ClayMesh : MonoBehaviour
 {
-    private Mesh originalMesh;
-    private Mesh changedMesh;
+    private Mesh newMesh;
+    private int[] originalTris;
+    private Vector3[] originalVerts;
+    private Vector3[] originalNorms;
+    private Vector2[] originalUVs;
     private MeshRenderer mRenderer;
     [SerializeField]
     private Transform centre;
@@ -45,34 +49,62 @@ public class ClayMesh : MonoBehaviour
     NativeArray<Vector3> lastVertPositions;
     private JobHandle limitMoveJob;
     private LimitMovement limitMove;
+    private bool isActive = false;
 
     private void Start() {
         InitMesh();
         middle = meshFilter.transform.InverseTransformPoint(centre.position);
         mRenderer = GetComponent<MeshRenderer>();
+        Menu.StartPottery += StartPotteryWithDelay;
+        DiscardButton.Discard += Reset;
+    }
+
+    private void Reset() {
+        newMesh.vertices = originalVerts;
+        newMesh.uv = originalUVs;
+        newMesh.normals = originalNorms;
+        newMesh.triangles = originalTris;
+        Debug.Log("Reset");
+        RefreshMesh();
     }
 
     private void InitMesh() {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
-        originalMesh = meshFilter.mesh;
-        changedMesh = originalMesh;
-        originalVertices = originalMesh.vertices;
-        modifiedVertices = new Vector3[originalVertices.Length];
-        for(int i = 0; i < originalVertices.Length; i++) {
-            modifiedVertices[i] = originalVertices[i];
+        newMesh = meshFilter.mesh;
+        originalNorms = new Vector3[meshFilter.mesh.normals.Length];
+        for(int i = 0; i < meshFilter.mesh.normals.Length; i++) {
+            originalNorms[i] = meshFilter.mesh.normals[i];
         }
-        Debug.Log("verts - " + modifiedVertices.Length);
-        Debug.Log("normals - " + originalMesh.normals.Length);
+
+        originalTris = new int[meshFilter.mesh.triangles.Length];
+        for (int i = 0; i < meshFilter.mesh.triangles.Length; i++) {
+            originalTris[i] = meshFilter.mesh.triangles[i];
+        }
+        originalUVs = new Vector2[meshFilter.mesh.uv.Length];
+        for(int i = 0; i < meshFilter.mesh.uv.Length; i++) {
+            originalUVs[i] = meshFilter.mesh.uv[i];
+        }
+        originalVerts = new Vector3[meshFilter.mesh.vertices.Length];
+        for (int i = 0; i < meshFilter.mesh.vertices.Length; i++) {
+            originalVerts[i] = meshFilter.mesh.vertices[i];
+        }
+        modifiedVertices = new Vector3[originalVerts.Length];
+        for(int i = 0; i < originalVerts.Length; i++) {
+            modifiedVertices[i] = originalVerts[i];
+        }
     }
 
     private void Update() {
+        if(!isActive) {
+            return;
+        }
         if (movingVerts) {
             if (moveJobActive) {
                 FinishMoveJob();
             }
             vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
-            lastVertPositions = VectorArrayToNativeArray(originalMesh.vertices, Allocator.TempJob);
+            lastVertPositions = VectorArrayToNativeArray(newMesh.vertices, Allocator.TempJob);
             limitMove = new LimitMovement {
                 oldPositions = lastVertPositions,
                 newPositions = vertArray,
@@ -83,14 +115,21 @@ public class ClayMesh : MonoBehaviour
     }
 
     private void LateUpdate() {
+        if(!isActive) {
+            return;
+        }
         if (movingVerts) {
             FinishLimitJob();
-            originalMesh.vertices = modifiedVertices;
-            originalMesh.RecalculateNormals();
-            originalMesh.RecalculateBounds();
-            meshCollider.sharedMesh = originalMesh;
-            movingVerts = false;
+            newMesh.vertices = modifiedVertices;
+            RefreshMesh();
         }
+    }
+
+    private void RefreshMesh() {
+        newMesh.RecalculateNormals();
+        newMesh.RecalculateBounds();
+        meshCollider.sharedMesh = newMesh;
+        movingVerts = false;
     }
 
     private void DisplaceVertices(Vector3 pos, Vector3 directionToMove) {
@@ -101,7 +140,7 @@ public class ClayMesh : MonoBehaviour
         Vector3 meshPos = meshFilter.transform.InverseTransformPoint(pos);
         directionToMove = meshFilter.transform.InverseTransformDirection(directionToMove);
         vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
-        normalsArray = VectorArrayToNativeArray(originalMesh.normals, Allocator.TempJob);
+        normalsArray = VectorArrayToNativeArray(newMesh.normals, Allocator.TempJob);
         moveVerts = new MoveVertsJob {
             modifiedVerts = vertArray,
             normals = normalsArray,
@@ -117,6 +156,9 @@ public class ClayMesh : MonoBehaviour
     }
 
     private void OnCollisionEnter(Collision collision) {
+        if(!isActive) {
+            return;
+        }
 		if(collision.gameObject.tag == "Wheel")
 		{
 			return;
@@ -143,7 +185,7 @@ public class ClayMesh : MonoBehaviour
 
     private bool IsPushing(Vector3 pos, Vector3 dir) {
         Vector3 localPos = meshFilter.transform.TransformPoint(pos);
-        Vector3 nearestNorm = originalMesh.normals[FindNearestVert(localPos)];
+        Vector3 nearestNorm = newMesh.normals[FindNearestVert(localPos)];
         if (Vector3.Dot(dir, nearestNorm) <= 0.1) {
             return true;
         }
@@ -179,6 +221,15 @@ public class ClayMesh : MonoBehaviour
         vertArray.Dispose();
         lastVertPositions.Dispose();
 
+    }
+
+    public void StartPotteryWithDelay(float delayTime) {
+        StartCoroutine(StartPottery(delayTime));
+    }
+
+    private IEnumerator StartPottery(float delayTime) {
+        yield return new WaitForSeconds(delayTime);
+        isActive = true;
     }
 
     //native arrays constructor that takes an array and it's toArray functions are both costly and create garbage so the following functions

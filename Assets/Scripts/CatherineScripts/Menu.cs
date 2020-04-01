@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,7 +11,12 @@ public class Menu : MonoBehaviour
     [SerializeField]
     Animator camAnimator;
 
-    // Start is called before the first frame update
+    [SerializeField]
+    AnimationClip cameraMovement;
+
+    public delegate void StartPotteryEventHandler(float delayTime);
+    public static event StartPotteryEventHandler StartPottery;
+
     private void OnCollisionEnter(Collision collision)
     {
         switch(gameObject.name)
@@ -18,6 +24,7 @@ public class Menu : MonoBehaviour
             case "StartButton":
                 if (collision.collider.CompareTag("Hands"))
                 {
+                    StartPottery?.Invoke(cameraMovement.length);
                     menuButtons.SetActive(false);
                     camAnimator.SetBool("GoFromMenuToWheel", true);
                 }
