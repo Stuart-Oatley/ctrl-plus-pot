@@ -311,6 +311,7 @@
     <Compile Include="Assets\Scripts\CatherineScripts\Painter.cs" />
     <Compile Include="Assets\Scripts\ClayMesh.cs" />
     <Compile Include="Assets\Scripts\DiscardButton.cs" />
+    <Compile Include="Assets\Scripts\Finish.cs" />
     <Compile Include="Assets\Scripts\LimitMovement.cs" />
     <Compile Include="Assets\Scripts\MoveVertsJob.cs" />
     <Compile Include="Assets\Scripts\rotator.cs" />

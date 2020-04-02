@@ -19,6 +19,9 @@ public class ClayMesh : MonoBehaviour
     [SerializeField]
     private Transform centre;
 
+    [SerializeField]
+    private GameObject potteryButtons;
+
     private Vector3 middle;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
@@ -56,6 +59,17 @@ public class ClayMesh : MonoBehaviour
         mRenderer = GetComponent<MeshRenderer>();
         Menu.StartPottery += StartPotteryWithDelay;
         DiscardButton.Discard += Reset;
+        Finish.FinishPottery += FinishPottery;
+    }
+
+    private void FinishPottery() {
+        isActive = false;
+        gameObject.GetComponent<Rigidbody>().isKinematic = true;
+        gameObject.GetComponent<MeshCollider>().convex = false;
+        Debug.Log("finished");
+        potteryButtons.SetActive(false);
+        //gameObject.GetComponent<Painter>().enabled = true;
+        //Trigger camera animation to painting
     }
 
     private void Reset() {
@@ -100,8 +114,8 @@ public class ClayMesh : MonoBehaviour
             if (moveJobActive) {
                 FinishMoveJob();
             }
-            vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
-            lastVertPositions = VectorArrayToNativeArray(newMesh.vertices, Allocator.TempJob);
+            vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.Persistent);
+            lastVertPositions = VectorArrayToNativeArray(newMesh.vertices, Allocator.Persistent);
             limitMove = new LimitMovement {
                 oldPositions = lastVertPositions,
                 newPositions = vertArray,
@@ -136,8 +150,8 @@ public class ClayMesh : MonoBehaviour
         }
         Vector3 meshPos = meshFilter.transform.InverseTransformPoint(pos);
         directionToMove = meshFilter.transform.InverseTransformDirection(directionToMove);
-        vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.TempJob);
-        normalsArray = VectorArrayToNativeArray(newMesh.normals, Allocator.TempJob);
+        vertArray = VectorArrayToNativeArray(modifiedVertices, Allocator.Persistent);
+        normalsArray = VectorArrayToNativeArray(newMesh.normals, Allocator.Persistent);
         moveVerts = new MoveVertsJob {
             modifiedVerts = vertArray,
             normals = normalsArray,
@@ -227,6 +241,7 @@ public class ClayMesh : MonoBehaviour
     private IEnumerator StartPottery(float delayTime) {
         yield return new WaitForSeconds(delayTime);
         isActive = true;
+        potteryButtons.SetActive(true);
     }
 
     //native arrays constructor that takes an array and it's toArray functions are both costly and create garbage so the following functions
