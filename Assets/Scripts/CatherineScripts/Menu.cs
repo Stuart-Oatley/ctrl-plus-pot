@@ -5,40 +5,33 @@ using UnityEngine;
 
 public class Menu : MonoBehaviour
 {
-    [SerializeField]
-    GameObject menuButtons;
-
-    [SerializeField]
-    Animator camAnimator;
-
-    [SerializeField]
-    AnimationClip cameraMovement;
-
     public delegate void StartPotteryEventHandler(float delayTime);
     public static event StartPotteryEventHandler StartPottery;
 
+    public delegate void ShowingPotsEventHandler(float delayTime);
+    public static event ShowingPotsEventHandler ShowPots;
+
     private void OnCollisionEnter(Collision collision)
     {
+        if (!transform.parent.gameObject.activeSelf) {
+            return;
+        }
         switch(gameObject.name)
         {
             case "StartButton":
-                if (collision.collider.CompareTag("Hands"))
+                if (collision.collider.CompareTag("Index"))
                 {
-                    StartPottery?.Invoke(cameraMovement.length);
-                    menuButtons.SetActive(false);
-                    camAnimator.SetBool("GoFromMenuToWheel", true);
+                    AnimationStateManager.MoveCamera(Position.pottery);
                 }
                 break;
             case "PotsButton":
-                if (collision.collider.CompareTag("Hands"))
+                if (collision.collider.CompareTag("Index"))
                 {
-                    menuButtons.SetActive(false);
-                    Debug.Log("pots");
-                    // Load pots
+                    AnimationStateManager.MoveCamera(Position.pots);
                 }
                 break;
             case "QuitButton":
-                if (collision.collider.CompareTag("Hands"))
+                if (collision.collider.CompareTag("Index"))
                 {
                     Debug.Log("quit");
                     Application.Quit();

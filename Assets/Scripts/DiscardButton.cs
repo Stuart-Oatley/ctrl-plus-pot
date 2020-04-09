@@ -7,6 +7,8 @@ public class DiscardButton : MonoBehaviour
     public delegate void DiscardEventHandler();
     public static event DiscardEventHandler Discard;
     private void OnCollisionEnter(Collision collision) {
-        Discard?.Invoke();
+        if (transform.parent.gameObject.activeSelf == true && collision.collider.CompareTag("Index")) {
+            Discard?.Invoke();
+        }
     }
 }

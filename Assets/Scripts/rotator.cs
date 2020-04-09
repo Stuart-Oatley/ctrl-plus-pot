@@ -25,12 +25,6 @@ public class rotator : MonoBehaviour
         rigidbody = GetComponent<Rigidbody>();
     }
 
-    //private void FixedUpdate() {
-    //    if (rotate) {
-    //        rigidbody.AddTorque(rotation, ForceMode.Force);
-    //    }
-    //}
-
     void Update()
     {
         if (rotating)

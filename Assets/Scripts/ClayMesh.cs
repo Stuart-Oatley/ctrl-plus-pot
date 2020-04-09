@@ -19,9 +19,6 @@ public class ClayMesh : MonoBehaviour
     [SerializeField]
     private Transform centre;
 
-    [SerializeField]
-    private GameObject potteryButtons;
-
     private Vector3 middle;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
@@ -57,19 +54,29 @@ public class ClayMesh : MonoBehaviour
         InitMesh();
         middle = meshFilter.transform.InverseTransformPoint(centre.position);
         mRenderer = GetComponent<MeshRenderer>();
-        Menu.StartPottery += StartPotteryWithDelay;
         DiscardButton.Discard += Reset;
-        Finish.FinishPottery += FinishPottery;
+        PaintDiscard.Discard += Reset;
+        PotSaveManager.Saved += Reset;
+        AnimationStateManager.MovingCam += SetPotteryActive;
     }
 
-    private void FinishPottery() {
-        isActive = false;
-        gameObject.GetComponent<Rigidbody>().isKinematic = true;
-        gameObject.GetComponent<MeshCollider>().convex = false;
-        Debug.Log("finished");
-        potteryButtons.SetActive(false);
-        //gameObject.GetComponent<Painter>().enabled = true;
-        //Trigger camera animation to painting
+    private void SetPotteryActive(CamMoveEventArgs e) {
+        if (e.MovingTo == Position.pottery) {
+            StartCoroutine(StartPottery(e.AnimationLength));
+            return;
+        }
+        if (isActive) {
+            SetActive(false);
+            JobHandle.CompleteAll(ref vertsJob, ref limitMoveJob);
+        }
+        if (e.MovingTo == Position.painting) {
+            gameObject.GetComponent<Rigidbody>().isKinematic = true;
+            gameObject.GetComponent<MeshCollider>().convex = false;
+        }
+    }
+
+    private void SetActive(bool active) {
+        isActive = active;
     }
 
     private void Reset() {
@@ -77,6 +84,8 @@ public class ClayMesh : MonoBehaviour
             modifiedVertices[i] = originalVerts[i];
         }
         RefreshMesh();
+        gameObject.GetComponent<Rigidbody>().isKinematic = false;
+        gameObject.GetComponent<MeshCollider>().convex = true;
     }
 
     private void InitMesh() {
@@ -229,19 +238,18 @@ public class ClayMesh : MonoBehaviour
     private void FinishLimitJob() {
         limitMoveJob.Complete();
         NativeArrayToVectorArray(limitMove.newPositions, modifiedVertices);
-        vertArray.Dispose();
-        lastVertPositions.Dispose();
+        if (vertArray.IsCreated) {
+            vertArray.Dispose();
+        }
+        if (lastVertPositions.IsCreated) {
+            lastVertPositions.Dispose();
+        }
 
-    }
-
-    public void StartPotteryWithDelay(float delayTime) {
-        StartCoroutine(StartPottery(delayTime));
     }
 
     private IEnumerator StartPottery(float delayTime) {
         yield return new WaitForSeconds(delayTime);
-        isActive = true;
-        potteryButtons.SetActive(true);
+        SetActive(true);
     }
 
     //native arrays constructor that takes an array and it's toArray functions are both costly and create garbage so the following functions
@@ -302,5 +310,10 @@ public class ClayMesh : MonoBehaviour
         }
     }
 
+    private void OnApplicationQuit() {
+        if (normalsArray.IsCreated) {
+            normalsArray.Dispose();
+        }
+    }
 }
 

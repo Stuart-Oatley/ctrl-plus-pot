@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -25,14 +26,44 @@ public class Painter : MonoBehaviour
 
     private ContactPoint contact; // stores the contact point of collision
 
+    private bool active = false; //Whether we're painting at the moment
+
 	private void Start()
 	{
 		// make the base material have the clay texture before any paint
 		baseMat.mainTexture = clayTexture;
+
+        // Adds SetActive to MovingCam event
+        AnimationStateManager.MovingCam += SetActive;
 	}
 
-	private void OnCollisionEnter(Collision collision)
+    /// <summary>
+    /// Sets whether painting is active based on where the camera is moving to
+    /// </summary>
+    /// <param name="e"></param>
+    private void SetActive(CamMoveEventArgs e) {
+        if(e.MovingTo == Position.painting) {
+            StartCoroutine(Activate(e.AnimationLength));
+        } else {
+            active = false;
+        }
+    }
+
+    /// <summary>
+    /// Waits for animation to finish then activates painting
+    /// </summary>
+    /// <param name="animationLength"></param>
+    /// <returns></returns>
+    private IEnumerator Activate(float animationLength) {
+        yield return new WaitForSeconds(animationLength);
+        active = true;
+    }
+
+    private void OnCollisionEnter(Collision collision)
 	{
+        if (!active) {
+            return;
+        }
 		foreach (ContactPoint cp in collision.contacts)
 		{
             contact = cp;
