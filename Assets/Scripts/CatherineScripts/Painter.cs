@@ -28,6 +28,9 @@ public class Painter : MonoBehaviour
 
     private bool active = false; //Whether we're painting at the moment
 
+    private Rigidbody rb; // Stores the rigidbody
+    private MeshCollider mc;
+
 	private void Start()
 	{
 		// make the base material have the clay texture before any paint
@@ -35,6 +38,9 @@ public class Painter : MonoBehaviour
 
         // Adds SetActive to MovingCam event
         AnimationStateManager.MovingCam += SetActive;
+
+        rb = GetComponent<Rigidbody>();
+        mc = GetComponent<MeshCollider>();
 	}
 
     /// <summary>
@@ -57,6 +63,8 @@ public class Painter : MonoBehaviour
     private IEnumerator Activate(float animationLength) {
         yield return new WaitForSeconds(animationLength);
         active = true;
+        rb.isKinematic = true;
+        mc.convex = false;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -64,6 +72,7 @@ public class Painter : MonoBehaviour
         if (!active) {
             return;
         }
+
 		foreach (ContactPoint cp in collision.contacts)
 		{
             contact = cp;
