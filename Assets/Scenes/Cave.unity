@@ -1967,6 +1967,7 @@ MonoBehaviour:
   canvasTex: {fileID: 8400000, guid: 1be36dceb1483264997338c0be40e468, type: 2}
   clayTexture: {fileID: 2800000, guid: fa4bb3b40e220b74a879e068b51477e7, type: 3}
   baseMat: {fileID: 2100000, guid: 921c68d0397b27d48ab2071caa451e51, type: 2}
+  potBase: {fileID: 1992041862914770797}
   paintColour: {r: 0, g: 0, b: 0, a: 0}
 --- !u!1001 &359680329
 PrefabInstance:
@@ -2712,7 +2713,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 626036985}
   m_LocalRotation: {x: 0.5477101, y: 0.07120603, z: -0.44722766, w: -0.70351326}
-  m_LocalPosition: {x: 0.08879532, y: 0.6982001, z: -0.21}
+  m_LocalPosition: {x: 0.089, y: 0.6982001, z: -0.233}
   m_LocalScale: {x: 0.25, y: 0.832328, z: 0.58119}
   m_Children:
   - {fileID: 6788008467774147937}
@@ -7334,7 +7335,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8605547522144370034}
   m_LocalRotation: {x: 0.69099957, y: 0.3826344, z: -0.15006411, w: -0.5946355}
-  m_LocalPosition: {x: 0.117, y: 0.697, z: 0.276}
+  m_LocalPosition: {x: 0.117, y: 0.697, z: 0.305}
   m_LocalScale: {x: 0.25, y: 0.832328, z: 0.58119}
   m_Children:
   - {fileID: 465577274025622612}
@@ -7488,7 +7489,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8296172668609313003}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.083, y: 9.435, z: 4.877}
+  m_LocalPosition: {x: -3.103, y: 9.435, z: 4.877}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_Children:
   - {fileID: 315346073}
@@ -7519,15 +7520,15 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8296172668210906657}
-  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -3.157, y: 8.076, z: 5.608}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalRotation: {x: 0.04908037, y: 0.7054014, z: 0.04908037, w: 0.7054014}
+  m_LocalPosition: {x: -3.157, y: 8.159527, z: 5.4611206}
+  m_LocalScale: {x: 1.4, y: 1.4, z: 1.4}
   m_Children:
   - {fileID: 3268080327490479797}
   - {fileID: 626036986}
   m_Father: {fileID: 0}
   m_RootOrder: 6
-  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90.00001, z: 7.9600005}
 --- !u!4 &5151189005647848530
 Transform:
   m_ObjectHideFlags: 0

@@ -16,6 +16,8 @@ public class Painter : MonoBehaviour
 
 	[SerializeField] private Material baseMat; // material of base texture where the painted texture will be saved
 
+    [SerializeField] private GameObject potBase;
+
 	private float brushSize = 1.0f; // the brush size
 	public Color paintColour; // the paint colour
 
@@ -29,7 +31,9 @@ public class Painter : MonoBehaviour
     private bool active = false; //Whether we're painting at the moment
 
     private Rigidbody rb; // Stores the rigidbody
-    private MeshCollider mc;
+    private MeshCollider mc; // Stores the mesh collider
+
+    private Vector3 originalPos;
 
 	private void Start()
 	{
@@ -39,9 +43,25 @@ public class Painter : MonoBehaviour
         // Adds SetActive to MovingCam event
         AnimationStateManager.MovingCam += SetActive;
 
+        // Finds the rigidbody and meshcollider of the pot
         rb = GetComponent<Rigidbody>();
         mc = GetComponent<MeshCollider>();
+
+        originalPos = gameObject.transform.parent.position;
 	}
+
+    private void Update()
+    {
+        if(active)
+        {
+            transform.parent.position = new Vector3(-3.103f, 9.535f, 5.6f);
+        }
+        else
+        {
+            transform.parent.position = originalPos;
+            potBase.SetActive(true);
+        }
+    }
 
     /// <summary>
     /// Sets whether painting is active based on where the camera is moving to
@@ -63,22 +83,29 @@ public class Painter : MonoBehaviour
     private IEnumerator Activate(float animationLength) {
         yield return new WaitForSeconds(animationLength);
         active = true;
+
+        // makes the pot kinematic and the mesh collider convex
         rb.isKinematic = true;
         mc.convex = false;
+
+        potBase.SetActive(false);
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnCollisionStay(Collision collision)
 	{
         if (!active) {
             return;
         }
 
-		foreach (ContactPoint cp in collision.contacts)
-		{
-            contact = cp;
-		}
+        if (collision.collider.CompareTag("Hands"))
+        {
+            foreach (ContactPoint cp in collision.contacts)
+            {
+                contact = cp;
+            }
 
-        Paint();
+            Paint();
+        }
 	}
 
 	private void Paint()

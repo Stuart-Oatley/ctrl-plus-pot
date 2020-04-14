@@ -309,9 +309,15 @@
     <Compile Include="Assets\Scripts\AnimationStateManager.cs" />
     <Compile Include="Assets\Scripts\BackFromPotsButton.cs" />
     <Compile Include="Assets\Scripts\BackFromPottery.cs" />
+    <Compile Include="Assets\Scripts\CatherineScripts\BaseRotation.cs" />
+    <Compile Include="Assets\Scripts\CatherineScripts\ButtonInteraction.cs" />
+    <Compile Include="Assets\Scripts\CatherineScripts\ChangeShape.cs" />
     <Compile Include="Assets\Scripts\CatherineScripts\Menu.cs" />
     <Compile Include="Assets\Scripts\CatherineScripts\PaintColour.cs" />
     <Compile Include="Assets\Scripts\CatherineScripts\Painter.cs" />
+    <Compile Include="Assets\Scripts\CatherineScripts\Test.cs" />
+    <Compile Include="Assets\Scripts\CatherineScripts\Timer.cs" />
+    <Compile Include="Assets\Scripts\CatherineScripts\WorldValues.cs" />
     <Compile Include="Assets\Scripts\ClayMesh.cs" />
     <Compile Include="Assets\Scripts\DiscardButton.cs" />
     <Compile Include="Assets\Scripts\Finish.cs" />
