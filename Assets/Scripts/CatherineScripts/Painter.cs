@@ -33,7 +33,7 @@ public class Painter : MonoBehaviour
     private Rigidbody rb; // Stores the rigidbody
     private MeshCollider mc; // Stores the mesh collider
 
-    private Vector3 originalPos;
+    private Vector3 originalPos; // Stores original position of pot
 
 	private void Start()
 	{
@@ -56,12 +56,15 @@ public class Painter : MonoBehaviour
 
     private void Update()
     {
+        // checks if the painting is active
         if(active)
         {
-            transform.parent.position = new Vector3(-3.103f, 9.535f, 5.6f);
+            // moves pot closer to the player
+            transform.parent.position = new Vector3(-3.103f, 9.55f, 5.65f);
         }
         else
         {
+            // returns pot to original position and sets the base as active
             transform.parent.position = originalPos;
             potBase.SetActive(true);
         }
