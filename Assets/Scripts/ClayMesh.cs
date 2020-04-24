@@ -86,6 +86,7 @@ public class ClayMesh : MonoBehaviour
         RefreshMesh();
         gameObject.GetComponent<Rigidbody>().isKinematic = false;
         gameObject.GetComponent<MeshCollider>().convex = true;
+        gameObject.GetComponent<Painter>().InitTexture();
     }
 
     private void InitMesh() {

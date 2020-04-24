@@ -37,8 +37,7 @@ public class Painter : MonoBehaviour
 
 	private void Start()
 	{
-		// make the base material have the clay texture before any paint
-		baseMat.mainTexture = clayTexture;
+        InitTexture();
 
         // Adds SetActive to MovingCam event
         AnimationStateManager.MovingCam += SetActive;
@@ -49,6 +48,11 @@ public class Painter : MonoBehaviour
 
         originalPos = gameObject.transform.parent.position;
 	}
+
+    public void InitTexture() {
+        // make the base material have the clay texture before any paint
+        baseMat.mainTexture = clayTexture;
+    }
 
     private void Update()
     {
@@ -166,7 +170,7 @@ public class Painter : MonoBehaviour
 	}
 
 	// Saves the texture to the base material then removes the paint brushes
-	private void SaveTexture()
+	public void SaveTexture()
 	{
 		paintCounter = 0; // resets the paintbrush counter
 

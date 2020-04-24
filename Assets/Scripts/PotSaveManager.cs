@@ -49,7 +49,6 @@ public class PotSaveManager : MonoBehaviour
         numberSaved++;
         PlayerPrefs.SetInt(nameOfNumberSavedPref, numberSaved);
         MeshSaver.SaveMesh(savePot.Pot, nameOfPotSaveFiles + fileNumber.ToString());
-        Saved?.Invoke();
         LoadPot(fileNumber);
     }
 
@@ -62,6 +61,8 @@ public class PotSaveManager : MonoBehaviour
         while (MeshSaver.IsFileLocked(filename)) {
             yield return null;
         }
+        Saved?.Invoke();
         MeshSaver.LoadMesh(Pots[filenumber], filename);
+
     }
 }

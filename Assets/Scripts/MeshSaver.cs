@@ -139,7 +139,18 @@ public class MeshSaver
             BinaryFormatter binaryFormatter = new BinaryFormatter();
             binaryFormatter.Serialize(stream, meshData);
         }
-        Texture2D texture = (Texture2D)go.GetComponent<MeshRenderer>().material.mainTexture;
+        Debug.Log(go.GetComponent<MeshRenderer>().material.mainTexture.GetType());
+        Texture2D texture;
+        if(go.GetComponent<MeshRenderer>().material.mainTexture.GetType() == typeof(RenderTexture)) {
+            RenderTexture renderTexture = (RenderTexture)go.GetComponent<MeshRenderer>().material.mainTexture;
+            RenderTexture.active = renderTexture;
+            texture = new Texture2D(renderTexture.width, renderTexture.height);
+            texture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+            texture.Apply();
+            RenderTexture.active = null;
+        } else {
+            texture = (Texture2D)go.GetComponent<MeshRenderer>().material.mainTexture;
+        }
         string texFilePathAndName = Application.persistentDataPath + "\\" + filename + textureFileType;
         File.WriteAllBytes(texFilePathAndName, texture.EncodeToPNG());
     }

@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections;
+using UnityEngine;
 
 public class SaveButton : MonoBehaviour {
     [SerializeField]
@@ -8,6 +10,7 @@ public class SaveButton : MonoBehaviour {
 
     private void OnCollisionEnter(Collision collision) {
         if (transform.parent.gameObject.activeSelf == true && collision.collider.CompareTag("Index")) {
+            pot.GetComponent<Painter>().SaveTexture();
             SavePot?.Invoke(new SavePotEventArgs(pot));
             AnimationStateManager.MoveCamera(Position.menu);
         }
